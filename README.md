@@ -1,15 +1,10 @@
 # skyblock-player-activity-discord
 
-To install dependencies:
+## run
 
-```bash
-bun install
-```
+1. run `fix-deps.sh` to install and fix dependencies for building
+2. define `SURVIVAL_PLAYER_WEBHOOK` and `ECONOMY_PLAYER_WEBHOOK` in `.env`
 
-To run:
+## using
 
-```bash
-bun run index.ts
-```
-
-This project was created using `bun init` in bun v1.2.20. [Bun](https://bun.com) is a fast all-in-one JavaScript runtime.
+run the above, if on arm compile with `build-arm.sh` or join [the skyblock util discord server](https://discord.gg/SR3QBD6U6k)
