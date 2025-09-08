@@ -1,0 +1,15 @@
+{
+  "name": "skyblock-player-activity-discord",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "skyblock.js": "^1.5.3"
+  }
+}
