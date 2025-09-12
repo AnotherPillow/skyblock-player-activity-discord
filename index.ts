@@ -34,7 +34,7 @@ setInterval(async () => {
     let economyContent = `Economy is ${economyResult.online ? 'online' : 'offline'}, with: ${economyResult.players_online}/${economyResult.max_players} players.\n`
 
     if (survivalDifference.lost.length > 50 || survivalDifference.added.length > 50) {
-        survivalContent = `Too many players to list individually. Lost: ${survivalDifference.lost.length}, Added: ${survivalDifference.added.length}`
+        survivalContent += `Too many players to list individually. Lost: ${survivalDifference.lost.length}, Added: ${survivalDifference.added.length}`
     } else {
         for (const item of [...survivalDifference.added.map((name)=>['Added', name]), ...survivalDifference.lost.map((name)=>['Lost', name])]) {
             survivalContent += `- **${item[0]}**: \`${item[1]}\`\n`
@@ -43,7 +43,7 @@ setInterval(async () => {
 
 
     if (economyDifference.lost.length > 50 || economyDifference.added.length > 50) {
-        economyContent = `Too many players to list individually. Lost: ${economyDifference.lost.length}, Added: ${economyDifference.added.length}`
+        economyContent += `Too many players to list individually. Lost: ${economyDifference.lost.length}, Added: ${economyDifference.added.length}`
     } else {
         for (const item of [...economyDifference.added.map((name)=>['Added', name]), ...economyDifference.lost.map((name)=>['Lost', name])]) {
             economyContent += `- **${item[0]}**: \`${item[1]}\`\n`
