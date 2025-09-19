@@ -1,15 +1,36 @@
 console.log('started @', new Date().toISOString())
 
+import client from 'prom-client'
+import express from 'express'
 import sb from 'skyblock.js'
 
+const app = express()
+
+const playerCountCounter = new client.Gauge({
+    name: "skyblock_player_total",
+    help: "Players online on Skyblock",
+    labelNames: ["location"], // survival | economy
+})
+
+app.get("/metrics", async (_req, res) => {
+    res.set("Content-Type", client.register.contentType);
+    res.end(await client.register.metrics());
+});
+
+app.get("/healthz", (_req, res) => res.send("ok"));
+
+app.listen(19862, () => {
+    console.log(`Metrics server listening on http://::19862`);
+});
+
 function diffArray(newArray: string[], oldArray: string[]): {lost: string[], added: string[]} {
-  const newSet = new Set(newArray);
-  const oldSet = new Set(oldArray);
+    const newSet = new Set(newArray);
+    const oldSet = new Set(oldArray);
   
-  const lost = oldArray.filter((item: string) => !newSet.has(item));
-  const added = newArray.filter((item: string) => !oldSet.has(item));
+    const lost = oldArray.filter((item: string) => !newSet.has(item));
+    const added = newArray.filter((item: string) => !oldSet.has(item));
   
-  return { lost, added };
+    return { lost, added };
 }
 
 const survivalHook = process.env.SURVIVAL_PLAYER_WEBHOOK
@@ -32,6 +53,9 @@ setInterval(async () => {
 
     let survivalContent = `Survival is ${survivalResult.online ? 'online' : 'offline'}, with: ${survivalResult.players_online}/${survivalResult.max_players} players.\n`
     let economyContent = `Economy is ${economyResult.online ? 'online' : 'offline'}, with: ${economyResult.players_online}/${economyResult.max_players} players.\n`
+
+    playerCountCounter.set({ location: "economy"  }, economyResult.players_online);
+    playerCountCounter.set({ location: "survival" }, survivalResult.players_online);
 
     if (survivalDifference.lost.length > 50 || survivalDifference.added.length > 50) {
         survivalContent += `Too many players to list individually. Lost: ${survivalDifference.lost.length}, Added: ${survivalDifference.added.length}`
