@@ -45,8 +45,8 @@ setInterval(async () => {
     const survivalResult = await sb.survival()
     const economyResult = await sb.economy()
 
-    const survivalPlayers = survivalResult.player_list.sort()
-    const economyPlayers = economyResult.player_list.sort()
+    const survivalPlayers = survivalResult.player_list?.sort() ?? []
+    const economyPlayers = economyResult.player_list?.sort() ?? []
 
     const survivalDifference = diffArray(survivalPlayers, lastSurvival)
     const economyDifference = diffArray(economyPlayers, lastEconomy)
@@ -54,8 +54,8 @@ setInterval(async () => {
     let survivalContent = `Survival is ${survivalResult.online ? 'online' : 'offline'}, with: ${survivalResult.players_online}/${survivalResult.max_players} players.\n`
     let economyContent = `Economy is ${economyResult.online ? 'online' : 'offline'}, with: ${economyResult.players_online}/${economyResult.max_players} players.\n`
 
-    playerCountCounter.set({ location: "economy"  }, economyResult.players_online);
-    playerCountCounter.set({ location: "survival" }, survivalResult.players_online);
+    playerCountCounter.set({ location: "economy"  }, economyResult.online ? Number(economyResult.players_online || 0) : 0);
+    playerCountCounter.set({ location: "survival" }, survivalResult.online ? Number(survivalResult.players_online || 0) : 0);
 
     if (survivalDifference.lost.length > 50 || survivalDifference.added.length > 50) {
         survivalContent += `Too many players to list individually. Lost: ${survivalDifference.lost.length}, Added: ${survivalDifference.added.length}`
