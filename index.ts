@@ -12,9 +12,19 @@ const playerCountCounter = new client.Gauge({
     labelNames: ["location"], // survival | economy
 })
 
+const scrape_ok = new client.Gauge({
+    name: "sbpad_scrape_success",
+    help: "1 if last Skyblock fetch succeeded, 0 otherwise",
+})
+
 app.get("/metrics", async (_req, res) => {
-    res.set("Content-Type", client.register.contentType);
-    res.end(await client.register.metrics());
+    const t0 = Date.now();
+    try {
+        res.set("Content-Type", client.register.contentType);
+        res.end(await client.register.metrics());
+    } finally {
+        console.log("served /metrics in", Date.now() - t0, "ms at", new Date().toISOString());
+    }
 });
 
 app.get("/healthz", (_req, res) => res.send("ok"));
@@ -57,6 +67,7 @@ setInterval(async () => {
 
         playerCountCounter.set({ location: "economy"  }, economyResult.online ? Number(economyResult.players_online || 0) : 0);
         playerCountCounter.set({ location: "survival" }, survivalResult.online ? Number(survivalResult.players_online || 0) : 0);
+        scrape_ok.set(1);
 
         if (survivalDifference.lost.length > 50 || survivalDifference.added.length > 50) {
             survivalContent += `Too many players to list individually. Lost: ${survivalDifference.lost.length}, Added: ${survivalDifference.added.length}`
@@ -92,8 +103,9 @@ setInterval(async () => {
     } catch (e) {
         console.log(`${new Date().toISOString()} threw on loop, error: `, e)
 
-        playerCountCounter.set({ location: "economy"  }, NaN);
-        playerCountCounter.set({ location: "survival" }, NaN);
+//        playerCountCounter.set({ location: "economy"  }, NaN);
+//        playerCountCounter.set({ location: "survival" }, NaN);
+        scrape_ok.set(0);
     }
 
 }, 10_000) // every 30 seconds:
