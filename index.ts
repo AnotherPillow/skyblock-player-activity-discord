@@ -114,8 +114,14 @@ setInterval(async () => {
         if (survivalDifference.lost.length > 50 || survivalDifference.added.length > 50) {
             survivalContent += `Too many players to list individually. Lost: ${survivalDifference.lost.length}, Added: ${survivalDifference.added.length}`
         } else {
-            for (const item of [...survivalDifference.added.map((name)=>['Added', name]), ...survivalDifference.lost.map((name)=>['Lost', name])]) {
-                survivalContent += `- **${item[0]}**: \`${item[1]}\`\n`
+            const toi = await Promise.all([...survivalDifference.added.map((uuid)=>['Added', uuid]), ...survivalDifference.lost.map((uuid)=>['Lost', uuid])]
+                .map(async ([state, uuid]) => {
+                    return [state, uuid, uuid && uuid.startsWith('0000') ? '??' : 
+                        (await fetch(`https://mowojang.matdoes.dev/${uuid}`).then(r=>r.json()) as any).name]
+                })
+            )
+            for (const item of toi) {
+                survivalContent += `- **${item[0]}**: \`${item[2]}\` (\`${item[1]}\`)\n`
             }
         }
 
@@ -123,8 +129,14 @@ setInterval(async () => {
         if (economyDifference.lost.length > 50 || economyDifference.added.length > 50) {
             economyContent += `Too many players to list individually. Lost: ${economyDifference.lost.length}, Added: ${economyDifference.added.length}`
         } else {
-            for (const item of [...economyDifference.added.map((name)=>['Added', name]), ...economyDifference.lost.map((name)=>['Lost', name])]) {
-                economyContent += `- **${item[0]}**: \`${item[1]}\`\n`
+            const toi = await Promise.all([...economyDifference.added.map((uuid)=>['Added', uuid]), ...economyDifference.lost.map((uuid)=>['Lost', uuid])]
+                .map(async ([state, uuid]) => {
+                    return [state, uuid, uuid && uuid.startsWith('0000') ? '??' : 
+                        (await fetch(`https://mowojang.matdoes.dev/${uuid}`).then(r=>r.json()) as any).name]
+                })
+            )
+            for (const item of toi) {
+                economyContent += `- **${item[0]}**: \`${item[2]}\` (\`${item[1]}\`)\n`
             }
         }
 
