@@ -3,12 +3,25 @@ console.log('started @', new Date().toISOString())
 import client from 'prom-client'
 import express from 'express'
 import sb from 'skyblock.js'
+import * as listeners from './listeners.json' with { type: 'json' }
 
 const app = express()
 
 const playerCountCounter = new client.Gauge({
     name: "skyblock_player_total",
     help: "Players online on Skyblock",
+    labelNames: ["location"], // survival | economy
+})
+
+const tpsCounter = new client.Gauge({
+    name: "skyblock_tps_1m",
+    help: "TPS at the 1m average point",
+    labelNames: ["location"], // survival | economy
+})
+
+const msptCounter = new client.Gauge({
+    name: "skyblock_mspt",
+    help: "MSPT for each server",
     labelNames: ["location"], // survival | economy
 })
 
@@ -43,6 +56,10 @@ function diffArray(newArray: string[], oldArray: string[]): {lost: string[], add
     return { lost, added };
 }
 
+function deduplicate(arr: any[]): any[] {
+    return [...new Set(arr)]
+}
+
 const survivalHook = process.env.SURVIVAL_PLAYER_WEBHOOK
 const economyHook = process.env.ECONOMY_PLAYER_WEBHOOK
 
@@ -53,20 +70,45 @@ let lastEconomy: string[] = []
 setInterval(async () => {
     try {
         console.log('loop started @ ' + new Date().toISOString())
-        const survivalResult = await sb.survival()
-        const economyResult = await sb.economy()
+        const survivalResult = await sb.getGamemode(sb.Gamemodes.skyblock)
+        const economyResult = await sb.getGamemode(sb.Gamemodes.economy)
 
-        const survivalPlayers = (survivalResult?.player_list ?? []).sort()
-        const economyPlayers = (economyResult?.player_list ?? []).sort()
+        const survivalPlayers = (sb.isGamemodeOnline(survivalResult) ? survivalResult.players : []).sort()
+        const economyPlayers = (sb.isGamemodeOnline(economyResult) ? economyResult.players : []).sort()
 
         const survivalDifference = diffArray(survivalPlayers, lastSurvival)
         const economyDifference = diffArray(economyPlayers, lastEconomy)
 
-        let survivalContent = `Survival is ${survivalResult.online ? 'online' : 'offline'}, with: ${survivalResult.players_online}/${survivalResult.max_players} players.\n`
-        let economyContent = `Economy is ${economyResult.online ? 'online' : 'offline'}, with: ${economyResult.players_online}/${economyResult.max_players} players.\n`
+        for (const uuid of deduplicate([...survivalDifference.lost, ...survivalDifference.added, ...economyDifference.lost, ...economyDifference.added])) {
+            if (!listeners[uuid as never]) continue;
 
-        playerCountCounter.set({ location: "economy"  }, economyResult.online ? Number(economyResult.players_online || 0) : 0);
-        playerCountCounter.set({ location: "survival" }, survivalResult.online ? Number(survivalResult.players_online || 0) : 0);
+            const player = await sb.getPlayer(uuid);
+
+   //         const isOnline = player && player.status && !!player.status.connectVersion
+            const isOnline = player && player.status && 
+        (player.status.switchGamemodeTs == player.status.disconnectTs ? !!player.status.connectVersion : (player?.status.disconnectTs < player?.status.connectTs))
+    
+
+            console.log(player, isOnline)
+    
+
+            const msg = `${player.mojangUsernamePretty} (${uuid}) is ${isOnline ? 'connected to' : 'disconnected from'} ${player.status.switchGamemode}. ${listeners[uuid as keyof typeof listeners].pings}`
+
+            await fetch(listeners[uuid as keyof typeof listeners].webhook, { method: 'POST', body: JSON.stringify({content: msg}), headers: {'Content-Type': 'application/json'} })
+        }
+
+        let survivalContent = `Survival is ${sb.isGamemodeOnline(survivalResult) ? 'online' : 'offline'}, with: ${sb.isGamemodeOnline(survivalResult) ? survivalResult.playerCount : 0} players.\n`
+        let economyContent = `Economy is ${sb.isGamemodeOnline(economyResult) ? 'online' : 'offline'}, with: ${sb.isGamemodeOnline(economyResult) ? economyResult.playerCount : 0} players.\n`
+
+        playerCountCounter.set({ location: "economy"  }, sb.isGamemodeOnline(economyResult) ? Number(economyResult.playerCount || 0) : 0);
+        playerCountCounter.set({ location: "survival" }, sb.isGamemodeOnline(survivalResult) ? Number(survivalResult.playerCount || 0) : 0);
+
+        tpsCounter.set({ location: "economy"  }, sb.isGamemodeOnline(economyResult) ? Number(economyResult.metrics.tps[0] || 0) : 0);
+        tpsCounter.set({ location: "survival"  }, sb.isGamemodeOnline(survivalResult) ? Number(survivalResult.metrics.tps[0] || 0) : 0);
+
+        msptCounter.set({ location: "economy"  }, sb.isGamemodeOnline(economyResult) ? Number(economyResult.metrics.mspt[0] || 0) : 0);
+        msptCounter.set({ location: "survival"  }, sb.isGamemodeOnline(survivalResult) ? Number(survivalResult.metrics.mspt[0] || 0) : 0);
+        
         scrape_ok.set(1);
 
         if (survivalDifference.lost.length > 50 || survivalDifference.added.length > 50) {
