@@ -75,7 +75,7 @@ setInterval(async () => {
         const dropPartyResult = await sb.getGamemode('dropparty')
 
         const survivalPlayers = (sb.isGamemodeOnline(survivalResult) ? survivalResult.players : []).sort()
-        cosnt droppartyPlayers = (sb.isGamemodeOnline(dropPartyResult) ? dropPartyResult.players : []).sort()
+        const droppartyPlayers = (sb.isGamemodeOnline(dropPartyResult) ? dropPartyResult.players : []).sort()
         const economyPlayers = (sb.isGamemodeOnline(economyResult) ? economyResult.players : []).sort()
 
         const survivalDifference = diffArray(survivalPlayers, lastSurvival)
