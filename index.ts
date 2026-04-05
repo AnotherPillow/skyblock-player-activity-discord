@@ -72,8 +72,10 @@ setInterval(async () => {
         console.log('loop started @ ' + new Date().toISOString())
         const survivalResult = await sb.getGamemode(sb.Gamemodes.skyblock)
         const economyResult = await sb.getGamemode(sb.Gamemodes.economy)
+        const dropPartyResult = await sb.getGamemode('dropparty')
 
         const survivalPlayers = (sb.isGamemodeOnline(survivalResult) ? survivalResult.players : []).sort()
+        cosnt droppartyPlayers = (sb.isGamemodeOnline(dropPartyResult) ? dropPartyResult.players : []).sort()
         const economyPlayers = (sb.isGamemodeOnline(economyResult) ? economyResult.players : []).sort()
 
         const survivalDifference = diffArray(survivalPlayers, lastSurvival)
@@ -101,6 +103,7 @@ setInterval(async () => {
         let economyContent = `Economy is ${sb.isGamemodeOnline(economyResult) ? 'online' : 'offline'}, with: ${sb.isGamemodeOnline(economyResult) ? economyResult.playerCount : 0} players.\n`
 
         playerCountCounter.set({ location: "economy"  }, sb.isGamemodeOnline(economyResult) ? Number(economyResult.playerCount || 0) : 0);
+        playerCountCounter.set({ location: "dropparty" }, sb.isGamemodeOnline(dropPartyResult) ? Number(dropPartyResult.playerCount || 0) : 0);
         playerCountCounter.set({ location: "survival" }, sb.isGamemodeOnline(survivalResult) ? Number(survivalResult.playerCount || 0) : 0);
 
         tpsCounter.set({ location: "economy"  }, sb.isGamemodeOnline(economyResult) ? Number(economyResult.metrics.tps[0] || 0) : 0);
